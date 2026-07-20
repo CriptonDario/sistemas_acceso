@@ -12,68 +12,22 @@
            ESTILOS DE IMPRESIÓN (CORREGIDOS)
            ================================================= */
         @media print {
-            /* 1. Configuración de la hoja limpia */
             @page { margin: 0; size: auto; }
             body { margin: 0; padding: 0; }
-
-            /* 2. Ocultar todo lo que no sea el carnet */
             body * { visibility: hidden; }
             .navbar, .btn, .card-footer, .card-header, .col-md-8 { display: none !important; }
-
-            /* 3. Hacer visible el carnet */
             #printableArea, #printableArea * { visibility: visible; }
-
-            /* 4. POSICIONAMIENTO SEGURO (Sin recorte superior) */
             #printableArea {
-                position: absolute;
-                left: 50%;
-                top: 50px; /* MARGEN SUPERIOR FIJO (Soluciona el recorte) */
-                transform: translateX(-50%); /* Solo centrado horizontal */
-                
-                width: 350px;
-                /* Altura automática para ajustarse al contenido */
-                height: auto;
-                min-height: 450px;
-                
-                border: 3px solid #000; /* Borde más grueso y visible */
-                border-radius: 20px;
-                padding: 40px 20px;
-                
-                background-color: white;
-                text-align: center;
-                z-index: 9999;
+                position: fixed; inset: 0;
+                display: flex; align-items: center; justify-content: center;
             }
-
-            /* Ajuste del QR */
-            #qrImage {
-                width: 220px !important;
-                height: 220px !important;
-                margin-bottom: 20px;
-                display: block;
-                margin-left: auto;
-                margin-right: auto;
+            .carnet-wrap {
+                width: 280px !important;
+                border: 2.5px solid #111 !important;
+                border-radius: 20px !important;
+                padding: 20px !important;
+                background: #fff !important;
             }
-            
-            /* Ajuste de textos */
-            h2 { 
-                font-size: 32px !important; 
-                margin: 15px 0 !important; 
-                color: #000 !important; 
-                font-weight: bold !important;
-            }
-            
-            /* Estilo del código (Badge) */
-            .badge { 
-                border: 2px solid #000; 
-                color: #000 !important; 
-                background: transparent !important; 
-                font-size: 20px !important; 
-                padding: 10px 30px;
-                border-radius: 50px;
-            }
-            
-            /* Ocultar texto pequeño de ayuda */
-            p.small { display: none; } 
         }
     </style>
 </head>
@@ -81,14 +35,12 @@
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
   <div class="container">
-    <span class="navbar-brand fw-bold"><i class="bi bi-person-workspace"></i> Mi Portal</span>
+    <span class="navbar-brand fw-bold"><i class="bi bi-mortarboard-fill"></i> Portal Personal — Colegio Pestalozzi</span>
     <div class="d-flex align-items-center gap-2">
         <span class="text-white me-2 d-none d-md-block">Hola, <?php echo $empName; ?></span>
-        
         <button class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#passModal">
             <i class="bi bi-key-fill"></i>
         </button>
-        
         <a href="?c=Portal&a=logout" class="btn btn-sm btn-light text-primary fw-bold">Salir</a>
     </div>
   </div>
@@ -101,25 +53,53 @@
             <div class="card shadow-sm border-0 text-center h-100">
                 <div class="card-header bg-white fw-bold text-muted">MI CREDENCIAL</div>
                 
-                <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                    
+                <div class="card-body d-flex flex-column align-items-center justify-content-center p-3">
                     <div id="printableArea">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=<?php echo $empCode; ?>" 
-                             id="qrImage" class="img-fluid border p-2 rounded mb-3" alt="QR">
-                        
-                        <h2 class="fw-bold text-primary mb-2"><?php echo $empName; ?></h2>
-                        
-                        <span class="badge bg-secondary fs-5"><?php echo $empCode; ?></span>
-                        
-                        <p class="text-muted small mt-3 mb-0">Presenta este código en el kiosco.</p>
-                    </div>
+                      <div class="carnet-wrap bg-white rounded-4 border p-3 text-center" style="max-width:260px;">
 
+                        <!-- Logo -->
+                        <div class="mb-2 pb-2 border-bottom">
+                            <img src="https://www.pestalozzi.edu.pe/wp-content/themes/wp-theme-pestalozzi/public/assets/images/logo.svg"
+                                 style="height:26px;" alt="Pestalozzi" onerror="this.style.display='none'">
+                        </div>
+
+                        <!-- Foto del empleado -->
+                        <img id="portalFoto" src="<?php echo $fotoPortal; ?>" alt="foto"
+                             style="width:80px;height:80px;object-fit:cover;border-radius:50%;border:3px solid #0d6efd;margin:8px auto;display:block;">
+
+                        <!-- QR -->
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=<?php echo urlencode($empCode); ?>"
+                             id="qrImage" class="img-fluid border p-1 rounded mb-2" style="width:150px;" alt="QR">
+
+                        <h6 class="fw-bold text-primary mb-1"><?php echo $empName; ?></h6>
+                        <span class="badge bg-dark px-3 py-1 font-monospace"><?php echo $empCode; ?></span>
+                        <p class="text-muted small mt-2 mb-0">Presenta este código en el kiosco.</p>
+                      </div>
+                    </div>
                 </div>
                 
                 <div class="card-footer bg-white border-0">
-                    <button class="btn btn-outline-primary w-100" onclick="window.print()">
-                        <i class="bi bi-printer"></i> Imprimir / Descargar
+                    <button class="btn btn-outline-primary w-100 mb-2" onclick="window.print()">
+                        <i class="bi bi-printer"></i> Imprimir Carnet
                     </button>
+                    <!-- Acceso al Portal Docente si es docente -->
+                    <?php
+                        // Verificar si el empleado tiene asignaciones como docente
+                        $esDocente = false;
+                        try {
+                            $stmtDc = (new Database())->getConnection()->prepare(
+                                "SELECT COUNT(*) FROM docente_materia_grado
+                                 WHERE personal_id=:pid AND anio=:anio AND activo=1"
+                            );
+                            $stmtDc->execute([':pid'=>$empId, ':anio'=>date('Y')]);
+                            $esDocente = $stmtDc->fetchColumn() > 0;
+                        } catch(Exception $e) {}
+                    ?>
+                    <?php if ($esDocente): ?>
+                    <a href="?c=PortalDocente" class="btn btn-success w-100 fw-bold">
+                        <i class="bi bi-journal-check me-1"></i> Portal Docente — Mis Notas
+                    </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -140,10 +120,10 @@
                                 <?php if(count($myLogs) > 0): ?>
                                     <?php foreach($myLogs as $log): ?>
                                     <tr>
-                                        <td class="ps-3"><?php echo date('d/m/Y', strtotime($log['date_log'])); ?></td>
-                                        <td class="text-success fw-bold"><?php echo date('H:i', strtotime($log['check_in_time'])); ?></td>
-                                        <td class="text-danger"><?php echo ($log['check_out_time']) ? date('H:i', strtotime($log['check_out_time'])) : 'En curso'; ?></td>
-                                        <td><?php if($log['check_out_time']) { $diff = (new DateTime($log['check_in_time']))->diff(new DateTime($log['check_out_time'])); echo $diff->format('%Hh %Im'); } else { echo '--'; } ?></td>
+                                        <td class="ps-3"><?php echo date('d/m/Y', strtotime($log['fecha'])); ?></td>
+                                        <td class="text-success fw-bold"><?php echo date('H:i', strtotime($log['hora_entrada'])); ?></td>
+                                        <td class="text-danger"><?php echo ($log['hora_salida']) ? date('H:i', strtotime($log['hora_salida'])) : 'En curso'; ?></td>
+                                        <td><?php if($log['hora_salida']) { $diff = (new DateTime($log['hora_entrada']))->diff(new DateTime($log['hora_salida'])); echo $diff->format('%Hh %Im'); } else { echo '--'; } ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 <?php else: ?>

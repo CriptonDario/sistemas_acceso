@@ -1,7 +1,7 @@
 <?php
 class Attendance {
     private $conn;
-    private $table = "attendance_logs";
+    private $tabla = "registros_asistencia";
 
     public function __construct($db) {
         $this->conn = $db;
@@ -9,9 +9,9 @@ class Attendance {
 
     // 1. OBTENER LOS ÚLTIMOS 10 REGISTROS (Para tabla de recientes)
     public function getRecentLogs() {
-        $query = "SELECT a.*, e.first_name, e.last_name, e.employee_code 
-                  FROM " . $this->table . " a
-                  INNER JOIN employees e ON a.employee_id = e.id
+        $query = "SELECT a.*, p.nombres, p.apellidos, p.codigo 
+                  FROM " . $this->tabla . " a
+                  INNER JOIN personal p ON a.personal_id = p.id
                   ORDER BY a.id DESC LIMIT 10";
         
         $stmt = $this->conn->prepare($query);
@@ -21,38 +21,38 @@ class Attendance {
 
     // 2. CONTAR CUÁNTOS HAN MARCADO HOY (Para tarjeta verde)
     public function countToday() {
-        $today = date('Y-m-d');
-        $query = "SELECT COUNT(*) as total FROM " . $this->table . " WHERE date_log = :today";
+        $hoy = date('Y-m-d');
+        $query = "SELECT COUNT(*) as total FROM " . $this->tabla . " WHERE fecha = :hoy";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':today', $today);
+        $stmt->bindParam(':hoy', $hoy);
         $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row['total'];
+        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $fila['total'];
     }
 
     // 3. OBTENER HISTORIAL POR RANGO DE FECHAS (Para Reporte Excel)
-    public function getHistoryByDate($start, $end) {
-        $query = "SELECT a.date_log, a.check_in_time, a.check_out_time, a.status,
-                         e.first_name, e.last_name, e.employee_code, d.name as department
-                  FROM " . $this->table . " a
-                  INNER JOIN employees e ON a.employee_id = e.id
-                  LEFT JOIN departments d ON e.department_id = d.id
-                  WHERE a.date_log BETWEEN :start AND :end
-                  ORDER BY a.date_log DESC, a.check_in_time DESC";
+    public function getHistoryByDate($inicio, $fin) {
+        $query = "SELECT a.fecha, a.hora_entrada, a.hora_salida, a.estado,
+                         p.nombres, p.apellidos, p.codigo, ar.nombre as area
+                  FROM " . $this->tabla . " a
+                  INNER JOIN personal p ON a.personal_id = p.id
+                  LEFT JOIN areas ar ON p.area_id = ar.id
+                  WHERE a.fecha BETWEEN :inicio AND :fin
+                  ORDER BY a.fecha DESC, a.hora_entrada DESC";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':start', $start);
-        $stmt->bindParam(':end', $end);
+        $stmt->bindParam(':inicio', $inicio);
+        $stmt->bindParam(':fin', $fin);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // 4. ESTADÍSTICAS ÚLTIMOS 7 DÍAS (Para el Gráfico)
     public function getWeeklyStats() {
-        $query = "SELECT date_log, COUNT(*) as total 
-                  FROM " . $this->table . " 
-                  GROUP BY date_log 
-                  ORDER BY date_log DESC 
+        $query = "SELECT fecha, COUNT(*) as total 
+                  FROM " . $this->tabla . " 
+                  GROUP BY fecha 
+                  ORDER BY fecha DESC 
                   LIMIT 7";
         
         $stmt = $this->conn->prepare($query);
@@ -61,43 +61,42 @@ class Attendance {
     }
 
     // 5. HISTORIAL CON FILTROS (Para Pantalla Historial)
-    public function getLogsWithFilters($employee_id, $start, $end) {
-        $query = "SELECT a.date_log, a.check_in_time, a.check_out_time, a.status,
-                         e.first_name, e.last_name, e.employee_code, d.name as department
-                  FROM " . $this->table . " a
-                  INNER JOIN employees e ON a.employee_id = e.id
-                  LEFT JOIN departments d ON e.department_id = d.id
-                  WHERE a.date_log BETWEEN :start AND :end";
+    public function getLogsWithFilters($personal_id, $inicio, $fin) {
+        $query = "SELECT a.fecha, a.hora_entrada, a.hora_salida, a.estado,
+                         p.nombres, p.apellidos, p.codigo, ar.nombre as area
+                  FROM " . $this->tabla . " a
+                  INNER JOIN personal p ON a.personal_id = p.id
+                  LEFT JOIN areas ar ON p.area_id = ar.id
+                  WHERE a.fecha BETWEEN :inicio AND :fin";
         
-        if (!empty($employee_id)) {
-            $query .= " AND e.id = :eid";
+        if (!empty($personal_id)) {
+            $query .= " AND p.id = :pid";
         }
-        $query .= " ORDER BY a.date_log DESC, a.check_in_time DESC";
+        $query .= " ORDER BY a.fecha DESC, a.hora_entrada DESC";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':start', $start);
-        $stmt->bindParam(':end', $end);
-        if (!empty($employee_id)) {
-            $stmt->bindParam(':eid', $employee_id);
+        $stmt->bindParam(':inicio', $inicio);
+        $stmt->bindParam(':fin', $fin);
+        if (!empty($personal_id)) {
+            $stmt->bindParam(':pid', $personal_id);
         }
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 6. CONTAR TARDANZAS DE HOY (NUEVO PARA DASHBOARD)
+    // 6. CONTAR TARDANZAS DE HOY
     public function countLatesToday($horaLimite) {
-        $today = date('Y-m-d');
-        // Lógica: Es hoy Y la hora de entrada es mayor al límite
+        $hoy = date('Y-m-d');
         $query = "SELECT COUNT(*) as total 
-                  FROM " . $this->table . " 
-                  WHERE date_log = :today AND check_in_time > :limit";
+                  FROM " . $this->tabla . " 
+                  WHERE fecha = :hoy AND hora_entrada > :limite";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':today', $today);
-        $stmt->bindParam(':limit', $horaLimite);
+        $stmt->bindParam(':hoy', $hoy);
+        $stmt->bindParam(':limite', $horaLimite);
         $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row['total'];
+        $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $fila['total'];
     }
 }
 ?>

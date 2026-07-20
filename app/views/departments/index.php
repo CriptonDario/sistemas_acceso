@@ -21,7 +21,7 @@
     <?php require_once '../app/views/layouts/sidebar.php'; ?>
 
     <div class="flex-grow-1 p-4" style="height: 100vh; overflow-y: auto;">
-        <h2 class="mb-4 fw-bold text-secondary">🏢 Departamentos y Áreas</h2>
+        <h2 class="mb-4 fw-bold text-secondary">🏫 Áreas del Colegio Pestalozzi</h2>
 
         <?php if(isset($_GET['msg'])): ?>
             <div class="alert alert-success alert-dismissible fade show"><button type="button" class="btn-close" data-bs-dismiss="alert"></button>Operación exitosa.</div>
@@ -30,10 +30,21 @@
         <div class="row">
             <div class="col-md-4">
                 <div class="card shadow border-0 mb-4">
-                    <div class="card-header bg-primary text-white"><h5 class="m-0"><i class="bi bi-plus-lg"></i> Nuevo Departamento</h5></div>
+                    <div class="card-header bg-primary text-white"><h5 class="m-0"><i class="bi bi-plus-lg"></i> Nueva Área</h5></div>
                     <div class="card-body">
                         <form action="?c=Department&a=store" method="POST">
-                            <div class="mb-3"><label class="form-label">Nombre</label><input type="text" name="name" class="form-control" required></div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Nombre del Área</label>
+                                <input type="text" name="name" class="form-control" required placeholder="Ej: Docentes Inicial">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tipo</label>
+                                <select name="tipo" class="form-select">
+                                    <option value="academica">Académica</option>
+                                    <option value="administrativa">Administrativa</option>
+                                    <option value="apoyo">Apoyo</option>
+                                </select>
+                            </div>
                             <div class="d-grid"><button type="submit" class="btn btn-primary">Guardar</button></div>
                         </form>
                     </div>
@@ -44,24 +55,38 @@
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-0">
                         <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light"><tr><th class="ps-4">Estado</th><th>Nombre</th><th class="text-end pe-4">Acciones</th></tr></thead>
+                            <thead class="table-light">
+                                <tr><th class="ps-4">Estado</th><th>Nombre</th><th>Tipo</th><th class="text-end pe-4">Acciones</th></tr>
+                            </thead>
                             <tbody>
                                 <?php if(isset($departments) && count($departments) > 0): ?>
                                     <?php foreach($departments as $dept): ?>
-                                    <tr class="<?php echo (isset($dept['status']) && $dept['status'] == 'inactivo') ? 'table-inactive' : ''; ?>">
-                                        <td class="ps-4"><?php echo (isset($dept['status']) && $dept['status'] == 'inactivo') ? '<span class="badge bg-danger">INACTIVO</span>' : '<span class="badge bg-success">ACTIVO</span>'; ?></td>
-                                        <td class="fw-bold"><?php echo $dept['name']; ?></td>
+                                    <tr class="<?php echo (isset($dept['estado']) && $dept['estado'] == 'inactivo') ? 'table-inactive' : ''; ?>">
+                                        <td class="ps-4">
+                                            <?php echo (isset($dept['estado']) && $dept['estado'] == 'inactivo')
+                                                ? '<span class="badge bg-danger">INACTIVO</span>'
+                                                : '<span class="badge bg-success">ACTIVO</span>'; ?>
+                                        </td>
+                                        <td class="fw-bold"><?php echo $dept['nombre']; ?></td>
+                                        <td>
+                                            <?php
+                                                $tipoLabel = ['academica' => 'Académica', 'administrativa' => 'Administrativa', 'apoyo' => 'Apoyo'];
+                                                $tipoColor = ['academica' => 'bg-primary', 'administrativa' => 'bg-secondary', 'apoyo' => 'bg-warning text-dark'];
+                                                $t = $dept['tipo'] ?? 'academica';
+                                                echo '<span class="badge ' . ($tipoColor[$t] ?? 'bg-secondary') . '">' . ($tipoLabel[$t] ?? $t) . '</span>';
+                                            ?>
+                                        </td>
                                         <td class="text-end pe-4">
                                             <a href="?c=Department&a=edit&id=<?php echo $dept['id']; ?>" class="btn btn-sm btn-outline-warning me-1"><i class="bi bi-pencil-fill"></i></a>
-                                            <?php if(isset($dept['status']) && $dept['status'] == 'inactivo'): ?>
-                                                <a href="?c=Department&a=toggle&id=<?php echo $dept['id']; ?>&status=inactivo" class="btn btn-sm btn-outline-success me-1" onclick="confirmarAccion(event, this.href, '¿Reactivar?', 'Visible.', 'success')"><i class="bi bi-power"></i></a>
+                                            <?php if(isset($dept['estado']) && $dept['estado'] == 'inactivo'): ?>
+                                                <a href="?c=Department&a=toggle&id=<?php echo $dept['id']; ?>&status=inactivo" class="btn btn-sm btn-outline-success me-1" onclick="confirmarAccion(event, this.href, '¿Reactivar área?', 'Volverá a estar visible.', 'success')"><i class="bi bi-power"></i></a>
                                             <?php else: ?>
-                                                <a href="?c=Department&a=toggle&id=<?php echo $dept['id']; ?>&status=activo" class="btn btn-sm btn-outline-danger me-1" onclick="confirmarAccion(event, this.href, '¿Desactivar?', 'No visible.', 'warning')"><i class="bi bi-power"></i></a>
+                                                <a href="?c=Department&a=toggle&id=<?php echo $dept['id']; ?>&status=activo" class="btn btn-sm btn-outline-danger me-1" onclick="confirmarAccion(event, this.href, '¿Desactivar área?', 'No aparecerá en los formularios.', 'warning')"><i class="bi bi-power"></i></a>
                                             <?php endif; ?>
                                         </td>
                                     </tr>
                                     <?php endforeach; ?>
-                                <?php else: ?><tr><td colspan="3" class="text-center p-4">Sin datos.</td></tr><?php endif; ?>
+                                <?php else: ?><tr><td colspan="4" class="text-center p-4">Sin áreas registradas.</td></tr><?php endif; ?>
                             </tbody>
                         </table>
                     </div>

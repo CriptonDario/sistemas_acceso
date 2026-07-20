@@ -22,7 +22,7 @@
     <?php require_once '../app/views/layouts/sidebar.php'; ?>
 
     <div class="flex-grow-1 p-4" style="height: 100vh; overflow-y: auto;">
-        <h2 class="mb-4 fw-bold text-secondary">📋 Historial de Visitas</h2>
+        <h2 class="mb-4 fw-bold text-secondary">📋 Historial de Visitas — Colegio Pestalozzi</h2>
 
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-body bg-white rounded">
@@ -80,26 +80,26 @@
                                 <?php foreach($visitors as $vis): ?>
                                 <tr>
                                     <td class="ps-4">
-                                        <div class="fw-bold"><?php echo $vis['full_name']; ?></div>
+                                        <div class="fw-bold"><?php echo $vis['nombre_completo']; ?></div>
                                         <small class="text-muted">DNI: <?php echo $vis['dni']; ?></small>
                                     </td>
-                                    <td><?php echo $vis['company']; ?></td>
-                                    <td><?php echo $vis['reason']; ?></td>
+                                    <td><?php echo $vis['institucion']; ?></td>
+                                    <td><?php echo $vis['motivo']; ?></td>
                                     <td class="text-success fw-bold">
-                                        <?php echo date('d/m H:i:s', strtotime($vis['check_in'])); ?>
+                                        <?php echo date('d/m H:i:s', strtotime($vis['entrada'])); ?>
                                     </td>
                                     <td class="text-danger fw-bold">
-                                        <?php if($vis['check_out']): ?>
-                                            <?php echo date('d/m H:i:s', strtotime($vis['check_out'])); ?>
+                                        <?php if($vis['salida']): ?>
+                                            <?php echo date('d/m H:i:s', strtotime($vis['salida'])); ?>
                                         <?php else: ?>
                                             <span class="text-muted">--:--:--</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <?php if($vis['check_out']): ?>
+                                        <?php if($vis['salida']): ?>
                                             <span class="badge bg-secondary">Finalizada</span>
                                         <?php else: ?>
-                                            <span class="badge bg-success animate-pulse">En edificio</span>
+                                            <span class="badge bg-success">En el colegio</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>

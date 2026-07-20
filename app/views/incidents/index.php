@@ -43,6 +43,21 @@
             </div>
         </div>
 
+        <?php
+            $errMap = [
+                'sin_titulo'     => 'El título es obligatorio.',
+                'tipo_invalido'  => 'Tipo de archivo no permitido. Solo JPG, PNG, GIF o PDF.',
+                'archivo_grande' => 'El archivo supera el límite de 5 MB.',
+                'upload_fallo'   => 'No se pudo guardar el archivo adjunto.',
+                'error'          => 'Ocurrió un error al registrar la incidencia.',
+            ];
+            if (isset($_GET['err']) && isset($errMap[$_GET['err']])): ?>
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm">
+                ❌ <?php echo $errMap[$_GET['err']]; ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+
         <div class="card shadow-sm mb-4 border-0 no-print">
             <div class="card-body bg-white rounded">
                 <form action="" method="GET" class="row g-3 align-items-end">
@@ -84,32 +99,30 @@
                                 <?php foreach($incidents as $inc): ?>
                                 <tr>
                                     <td style="white-space: nowrap;">
-                                        <?php echo date('d/m/Y H:i', strtotime($inc['created_at'])); ?>
+                                        <?php echo date('d/m/Y H:i', strtotime($inc['fecha_registro'])); ?>
                                     </td>
                                     <td>
                                         <?php 
-                                            if($inc['severity'] == 'alta') echo '<span class="badge bg-danger">ALTA</span>';
-                                            elseif($inc['severity'] == 'media') echo '<span class="badge bg-warning text-dark">MEDIA</span>';
-                                            else echo '<span class="badge bg-success">BAJA</span>';
+                                            if($inc['severidad'] == 'alta')       echo '<span class="badge bg-danger">ALTA</span>';
+                                            elseif($inc['severidad'] == 'media')  echo '<span class="badge bg-warning text-dark">MEDIA</span>';
+                                            else                                   echo '<span class="badge bg-success">BAJA</span>';
                                         ?>
                                     </td>
                                     <td>
-                                        <div class="fw-bold"><?php echo $inc['title']; ?></div>
-                                        <small class="text-muted"><?php echo $inc['description']; ?></small>
+                                        <div class="fw-bold"><?php echo $inc['titulo']; ?></div>
+                                        <small class="text-muted"><?php echo $inc['descripcion']; ?></small>
                                     </td>
-                                    
                                     <td>
-                                        <?php if(!empty($inc['attachment'])): ?>
-                                            <a href="uploads/<?php echo $inc['attachment']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <?php if(!empty($inc['adjunto'])): ?>
+                                            <a href="uploads/<?php echo $inc['adjunto']; ?>" target="_blank" class="btn btn-sm btn-outline-primary">
                                                 <i class="bi bi-paperclip"></i> Ver Adjunto
                                             </a>
                                         <?php else: ?>
                                             <span class="text-muted small">Sin archivo</span>
                                         <?php endif; ?>
                                     </td>
-
                                     <td>
-                                        <i class="bi bi-person-circle me-1"></i> <?php echo $inc['reporter']; ?>
+                                        <i class="bi bi-person-circle me-1"></i> <?php echo $inc['reportado_por']; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

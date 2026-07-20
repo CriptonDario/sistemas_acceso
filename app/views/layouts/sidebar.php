@@ -22,12 +22,32 @@ function renderMenu($c, $a) {
             
             <li>
                 <a href="?c=Employee" class="<?php echo ($c=='Employee') ? 'active' : ''; ?>">
-                    <i class="bi bi-people-fill"></i> Empleados
+                    <i class="bi bi-people-fill"></i> Personal
+                </a>
+            </li>
+            <li>
+                <a href="?c=Alumno" class="<?php echo ($c=='Alumno') ? 'active' : ''; ?>">
+                    <i class="bi bi-mortarboard"></i> Alumnos
+                </a>
+            </li>
+            <li>
+                <a href="?c=Nota" class="<?php echo ($c=='Nota') ? 'active' : ''; ?>">
+                    <i class="bi bi-journal-check"></i> Notas
+                </a>
+            </li>
+            <li>
+                <a href="?c=Materia" class="<?php echo ($c=='Materia') ? 'active' : ''; ?>">
+                    <i class="bi bi-book-fill"></i> Materias
+                </a>
+            </li>
+            <li>
+                <a href="?c=Asignacion" class="<?php echo ($c=='Asignacion') ? 'active' : ''; ?>">
+                    <i class="bi bi-person-workspace"></i> Asig. Docentes
                 </a>
             </li>
             <li>
                 <a href="?c=Department" class="<?php echo ($c=='Department') ? 'active' : ''; ?>">
-                    <i class="bi bi-building-fill"></i> Departamentos
+                    <i class="bi bi-building-fill"></i> Áreas
                 </a>
             </li>
             <li>
@@ -43,13 +63,18 @@ function renderMenu($c, $a) {
             
             <li class="text-muted small fw-bold px-3 mt-3 mb-1">REPORTES</li>
             <li>
-                <a href="?c=Report&a=history" class="<?php echo ($a=='history') ? 'active' : ''; ?>">
-                    <i class="bi bi-clock-history"></i> Historial
+                <a href="?c=Report&a=history" class="<?php echo ($c=='Report' && $a=='history') ? 'active' : ''; ?>">
+                    <i class="bi bi-clock-history"></i> Historial Empleados
                 </a>
             </li>
             <li>
-                <a href="?c=Report" class="<?php echo ($c=='Report' && $a!='history') ? 'active' : ''; ?>">
-                    <i class="bi bi-file-earmark-excel"></i> Descargar Excel
+                <a href="?c=Report&a=studentHistory" class="<?php echo ($c=='Report' && $a=='studentHistory') ? 'active' : ''; ?>">
+                    <i class="bi bi-person-badge"></i> Historial Alumnos
+                </a>
+            </li>
+            <li>
+                <a href="?c=Report" class="<?php echo ($c=='Report' && $a!='history' && $a!='studentHistory') ? 'active' : ''; ?>">
+                    <i class="bi bi-file-earmark-excel"></i> Descargar Excel (Personal)
                 </a>
             </li>
         <?php endif; ?>
@@ -120,11 +145,11 @@ function renderMenu($c, $a) {
 <div class="sidebar d-none d-md-block" style="width: 260px; min-height: 100vh; background-color: #212529; color: white;">
     
     <div class="py-4 px-3 mb-4 bg-black bg-gradient d-flex align-items-center">
-        <i class="bi bi-shield-lock-fill fs-3 me-2 text-warning"></i>
+        <i class="bi bi-mortarboard-fill fs-3 me-2 text-warning"></i>
         <div>
-            <h5 class="m-0 fw-bold">Control Acceso</h5>
+            <h5 class="m-0 fw-bold">Pestalozzi</h5>
             <small class="text-white-50 text-uppercase" style="font-size: 0.7rem;">
-                Rol: <?php echo isset($_SESSION['role']) ? $_SESSION['role'] : 'Invitado'; ?>
+                Control de Acceso — <?php echo isset($_SESSION['role']) ? ucfirst($_SESSION['role']) : 'Invitado'; ?>
             </small>
         </div>
     </div>
@@ -140,7 +165,7 @@ function renderMenu($c, $a) {
             </button>
             
             <span class="navbar-brand m-0 fw-bold text-white">
-                <i class="bi bi-shield-check text-warning"></i> App V2.0
+                <i class="bi bi-mortarboard-fill text-warning"></i> Pestalozzi
             </span>
 
             <div class="d-flex">
@@ -168,6 +193,7 @@ function renderMenu($c, $a) {
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     const urlParamsSidebar = new URLSearchParams(window.location.search);
-    if(urlParamsSidebar.get('msg') === 'pass_ok') Swal.fire('¡Éxito!', 'Tu contraseña ha sido actualizada.', 'success');
+    if(urlParamsSidebar.get('msg') === 'pass_ok')       Swal.fire('¡Éxito!', 'Tu contraseña ha sido actualizada.', 'success');
     if(urlParamsSidebar.get('err') === 'pass_mismatch') Swal.fire('Error', 'Las contraseñas no coinciden.', 'error');
+    if(urlParamsSidebar.get('err') === 'pass_corta')    Swal.fire('Error', 'La contraseña debe tener al menos 6 caracteres.', 'error');
 </script>

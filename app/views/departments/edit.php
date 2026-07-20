@@ -2,10 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Editar Departamento</title>
+    <title>Editar Área — Colegio Pestalozzi</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    
     <style>
         .sidebar { min-height: 100vh; background-color: #212529; color: white; }
         .sidebar a { color: #adb5bd; text-decoration: none; padding: 12px 20px; display: block; border-left: 3px solid transparent; transition: 0.3s; }
@@ -17,21 +16,20 @@
 <body class="bg-light">
 
 <div class="d-flex">
-    
     <?php require_once '../app/views/layouts/sidebar.php'; ?>
 
     <div class="flex-grow-1 p-4" style="height: 100vh; overflow-y: auto;">
-        
+
         <div class="d-flex align-items-center mb-4">
             <a href="?c=Department" class="btn btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i> Volver</a>
-            <h2 class="mb-0 fw-bold text-secondary"><i class="bi bi-building-gear"></i> Editar Departamento</h2>
+            <h2 class="mb-0 fw-bold text-secondary"><i class="bi bi-building-gear"></i> Editar Área</h2>
         </div>
 
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="card shadow border-0">
                     <div class="card-header bg-warning text-dark fw-bold">
-                        Actualizar Información
+                        Actualizar Información del Área
                     </div>
                     <div class="card-body p-4">
                         <form action="?c=Department&a=update" method="POST">
@@ -39,8 +37,17 @@
 
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Nombre del Área</label>
-                                <input type="text" name="name" class="form-control form-control-lg" 
-                                       value="<?php echo $dept['name']; ?>" required>
+                                <input type="text" name="name" class="form-control form-control-lg"
+                                       value="<?php echo htmlspecialchars($dept['nombre']); ?>" required>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Tipo</label>
+                                <select name="tipo" class="form-select">
+                                    <option value="academica"      <?php echo ($dept['tipo']=='academica')      ? 'selected' : ''; ?>>Académica</option>
+                                    <option value="administrativa" <?php echo ($dept['tipo']=='administrativa') ? 'selected' : ''; ?>>Administrativa</option>
+                                    <option value="apoyo"          <?php echo ($dept['tipo']=='apoyo')          ? 'selected' : ''; ?>>Apoyo</option>
+                                </select>
                             </div>
 
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">

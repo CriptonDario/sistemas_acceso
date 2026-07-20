@@ -22,10 +22,15 @@
     <div class="flex-grow-1 p-4" style="height: 100vh; overflow-y: auto;">
         <h2 class="mb-4 fw-bold text-secondary"><i class="bi bi-person-gear"></i> Usuarios del Sistema</h2>
 
-        <?php if(isset($_GET['msg']) && $_GET['msg']=='creado') echo "<div class='alert alert-success'>Usuario creado correctamente.</div>"; ?>
-        <?php if(isset($_GET['msg']) && $_GET['msg']=='estado_cambiado') echo "<div class='alert alert-success'>Estado actualizado.</div>"; ?>
-        <?php if(isset($_GET['err']) && $_GET['err']=='existe') echo "<div class='alert alert-danger'>El nombre de usuario ya existe.</div>"; ?>
-        <?php if(isset($_GET['err']) && $_GET['err']=='self_disable') echo "<div class='alert alert-danger'>No puedes desactivar tu propia cuenta.</div>"; ?>
+        <?php if(isset($_GET['msg']) && $_GET['msg']=='creado')          echo "<div class='alert alert-success'>✅ Usuario creado correctamente.</div>"; ?>
+        <?php if(isset($_GET['msg']) && $_GET['msg']=='actualizado')      echo "<div class='alert alert-success'>✅ Usuario actualizado.</div>"; ?>
+        <?php if(isset($_GET['msg']) && $_GET['msg']=='estado_cambiado')  echo "<div class='alert alert-success'>✅ Estado actualizado.</div>"; ?>
+        <?php if(isset($_GET['msg']) && $_GET['msg']=='pass_ok')          echo "<div class='alert alert-success'>✅ Contraseña actualizada.</div>"; ?>
+        <?php if(isset($_GET['err']) && $_GET['err']=='existe')           echo "<div class='alert alert-danger'>❌ El nombre de usuario ya existe.</div>"; ?>
+        <?php if(isset($_GET['err']) && $_GET['err']=='self_disable')     echo "<div class='alert alert-danger'>❌ No puedes desactivar tu propia cuenta.</div>"; ?>
+        <?php if(isset($_GET['err']) && $_GET['err']=='pass_mismatch')    echo "<div class='alert alert-danger'>❌ Las contraseñas no coinciden.</div>"; ?>
+        <?php if(isset($_GET['err']) && $_GET['err']=='pass_corta')       echo "<div class='alert alert-danger'>❌ La contraseña debe tener al menos 6 caracteres.</div>"; ?>
+        <?php if(isset($_GET['err']) && $_GET['err']=='campos_vacios')    echo "<div class='alert alert-danger'>❌ Completa todos los campos obligatorios.</div>"; ?>
 
         <div class="row">
             <div class="col-md-4">
@@ -65,24 +70,24 @@
                                 <?php foreach($users as $u): ?>
                                 
                                 <?php 
-                                    // Si el status es NULL (usuarios viejos), asumimos activo
-                                    $status = isset($u['status']) ? $u['status'] : 'activo'; 
+                                    // Si el estado es NULL (usuarios viejos), asumimos activo
+                                    $estado = isset($u['estado']) ? $u['estado'] : 'activo'; 
                                 ?>
 
-                                <tr class="<?php echo ($status == 'inactivo') ? 'table-inactive' : ''; ?>">
+                                <tr class="<?php echo ($estado == 'inactivo') ? 'table-inactive' : ''; ?>">
                                     <td class="ps-4 text-muted">#<?php echo $u['id']; ?></td>
                                     
                                     <td>
-                                        <?php if($status == 'activo'): ?>
+                                        <?php if($estado == 'activo'): ?>
                                             <span class="badge bg-success">ACTIVO</span>
                                         <?php else: ?>
                                             <span class="badge bg-danger">INACTIVO</span>
                                         <?php endif; ?>
                                     </td>
 
-                                    <td class="fw-bold"><?php echo $u['username']; ?></td>
+                                    <td class="fw-bold"><?php echo $u['usuario']; ?></td>
                                     <td>
-                                        <?php if($u['role'] == 'admin'): ?>
+                                        <?php if($u['rol'] == 'admin'): ?>
                                             <span class="badge bg-primary">ADMIN</span>
                                         <?php else: ?>
                                             <span class="badge bg-secondary">GUARDIA</span>
@@ -94,9 +99,9 @@
                                             <i class="bi bi-pencil-fill"></i>
                                         </a>
                                         
-                                        <?php if($u['id'] != $_SESSION['user_id']): // No mostrar en mi propia fila ?>
+                                        <?php if($u['id'] != $_SESSION['user_id']): ?>
                                             
-                                            <?php if($status == 'activo'): ?>
+                                            <?php if($estado == 'activo'): ?>
                                                 <a href="?c=User&a=toggle&id=<?php echo $u['id']; ?>&status=activo" 
                                                    class="btn btn-sm btn-outline-danger"
                                                    onclick="confirmarAccion(event, this.href, '¿Desactivar Acceso?', 'Este usuario no podrá iniciar sesión.', 'warning')">

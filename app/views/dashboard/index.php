@@ -25,7 +25,7 @@
     <div class="flex-grow-1 bg-light" style="height: 100vh; overflow-y: auto;">
         <nav class="navbar navbar-light bg-white shadow-sm px-4 py-3">
             <div class="container-fluid">
-                <span class="navbar-brand mb-0 h1 fw-bold text-primary">Bienvenido, Administrador</span>
+                <span class="navbar-brand mb-0 h1 fw-bold text-primary">Bienvenido, Administrador — Colegio Pestalozzi</span>
                 <div class="d-flex align-items-center">
                     <i class="bi bi-person-circle fs-4 text-secondary"></i>
                 </div>
@@ -115,12 +115,12 @@
                                         <?php if(isset($recentLogs) && count($recentLogs) > 0): ?>
                                             <?php foreach(array_slice($recentLogs, 0, 5) as $log): ?>
                                                 <tr>
-                                                    <td class="ps-3 fw-bold"><?php echo $log['first_name']; ?></td>
+                                                    <td class="ps-3 fw-bold"><?php echo $log['nombres']; ?></td>
                                                     <td class="text-end pe-3">
-                                                        <?php if($log['check_out_time']): ?>
-                                                            <span class="badge bg-secondary">Salida <?php echo date('H:i', strtotime($log['check_out_time'])); ?></span>
+                                                        <?php if($log['hora_salida']): ?>
+                                                            <span class="badge bg-secondary">Salida <?php echo date('H:i', strtotime($log['hora_salida'])); ?></span>
                                                         <?php else: ?>
-                                                            <span class="badge bg-success">Entrada <?php echo date('H:i', strtotime($log['check_in_time'])); ?></span>
+                                                            <span class="badge bg-success">Entrada <?php echo date('H:i', strtotime($log['hora_entrada'])); ?></span>
                                                         <?php endif; ?>
                                                     </td>
                                                 </tr>

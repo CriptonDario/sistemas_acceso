@@ -39,14 +39,14 @@
                             
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Usuario</label>
-                                <input type="text" name="username" class="form-control" value="<?php echo $user['username']; ?>" required>
+                                <input type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($user['usuario']); ?>" required>
                             </div>
                             
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Rol</label>
                                 <select name="role" class="form-select">
-                                    <option value="guardia" <?php echo ($user['role']=='guardia')?'selected':''; ?>>Guardia</option>
-                                    <option value="admin" <?php echo ($user['role']=='admin')?'selected':''; ?>>Administrador</option>
+                                    <option value="guardia" <?php echo ($user['rol']=='guardia')?'selected':''; ?>>Guardia</option>
+                                    <option value="admin"   <?php echo ($user['rol']=='admin')  ?'selected':''; ?>>Administrador</option>
                                 </select>
                             </div>
 

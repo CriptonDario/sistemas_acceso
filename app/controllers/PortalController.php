@@ -5,111 +5,133 @@ require_once '../app/models/Attendance.php';
 
 class PortalController {
     private $db;
-    private $employeeModel;
-    private $attendanceModel;
+    private $personalModel;
+    private $asistenciaModel;
 
     public function __construct() {
+        // Sesión SIEMPRE primero
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
         $database = new Database();
         $this->db = $database->getConnection();
-        $this->employeeModel = new Employee($this->db);
-        $this->attendanceModel = new Attendance($this->db);
-        
-        if (session_status() == PHP_SESSION_NONE) session_start();
+        $this->personalModel   = new Employee($this->db);
+        $this->asistenciaModel = new Attendance($this->db);
     }
 
-    // 1. MOSTRAR LOGIN (Redirige al Login Unificado)
+    // 1. LOGIN — redirige al login unificado
     public function login() {
-        // Si ya está logueado, mandar al dashboard
-        if (isset($_SESSION['portal_role']) && $_SESSION['portal_role'] == 'empleado') {
+        if (isset($_SESSION['portal_role']) && $_SESSION['portal_role'] === 'empleado') {
             header("Location: ?c=Portal&a=index");
             exit;
         }
-        // CORRECCIÓN: Si intentan entrar aquí, los mandamos al Login Principal
         header("Location: ?c=Auth&a=login");
+        exit;
     }
 
-    // 2. PROCESAR LOGIN (Viene desde el Login Unificado)
+    // 2. AUTENTICAR EMPLEADO (desde login unificado)
     public function authenticate() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $email = $_POST['email'];
-            $password = $_POST['password'];
-
-            $employee = $this->employeeModel->login($email, $password);
-
-            if ($employee) {
-                $_SESSION['portal_id'] = $employee['id'];
-                $_SESSION['portal_name'] = $employee['first_name'];
-                $_SESSION['portal_code'] = $employee['employee_code'];
-                $_SESSION['portal_role'] = 'empleado';
-
-                header("Location: ?c=Portal&a=index");
-            } else {
-                // Si falla, regresamos al Login Principal con un error
-                header("Location: ?c=Auth&a=login&error=Credenciales%20incorrectas");
-            }
-        }
-    }
-
-    // 3. DASHBOARD DEL EMPLEADO
-    public function index() {
-        // Seguridad: Verificar si es empleado
-        if (!isset($_SESSION['portal_role']) || $_SESSION['portal_role'] != 'empleado') {
-            // Si no tiene permiso, al login principal
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header("Location: ?c=Auth&a=login");
             exit;
         }
 
-        $empId = $_SESSION['portal_id'];
+        $correo     = trim($_POST['email']    ?? '');
+        $contrasena = $_POST['password']      ?? '';
+
+        if (empty($correo) || empty($contrasena)) {
+            header("Location: ?c=Auth&a=login&error=" . urlencode("Completa todos los campos."));
+            exit;
+        }
+
+        $miembro = $this->personalModel->login($correo, $contrasena);
+
+        if ($miembro) {
+            session_regenerate_id(true);
+            $_SESSION['portal_id']   = $miembro['id'];
+            $_SESSION['portal_name'] = $miembro['nombres'];
+            $_SESSION['portal_code'] = $miembro['codigo'];
+            $_SESSION['portal_role'] = 'empleado';
+            header("Location: ?c=Portal&a=index");
+        } else {
+            header("Location: ?c=Auth&a=login&error=" . urlencode("Credenciales incorrectas o cuenta inactiva."));
+        }
+        exit;
+    }
+
+    // 3. DASHBOARD DEL PERSONAL
+    public function index() {
+        if (!isset($_SESSION['portal_role']) || $_SESSION['portal_role'] !== 'empleado') {
+            header("Location: ?c=Auth&a=login");
+            exit;
+        }
+
+        $empId   = $_SESSION['portal_id'];
         $empName = $_SESSION['portal_name'];
         $empCode = $_SESSION['portal_code'];
 
-        // Historial del mes actual
-        $start = date('Y-m-01');
-        $end = date('Y-m-d');
-        $myLogs = $this->attendanceModel->getLogsWithFilters($empId, $start, $end);
+        // Obtener foto del personal
+        $miembro  = $this->personalModel->getById($empId);
+        $fotoPortal = 'https://ui-avatars.com/api/?name=' . urlencode($empName) . '&background=0d6efd&color=fff&size=120';
+        if ($miembro && !empty($miembro['foto']) && $miembro['foto'] !== 'default.png') {
+            $fotoPortal = 'uploads/' . $miembro['foto'];
+        }
+
+        $inicio = date('Y-m-01');
+        $fin    = date('Y-m-d');
+        $myLogs = $this->asistenciaModel->getLogsWithFilters($empId, $inicio, $fin);
 
         require_once '../app/views/portal/dashboard.php';
     }
 
-    // 4. CAMBIAR CONTRASEÑA
+    // 4. CAMBIAR CONTRASEÑA (Portal del empleado)
     public function change_password() {
-        if (!isset($_SESSION['portal_role'])) { header("Location: ?c=Auth&a=login"); exit; }
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $currentPass = $_POST['current_password'];
-            $newPass = $_POST['new_password'];
-            $confirmPass = $_POST['confirm_password'];
-            $empId = $_SESSION['portal_id'];
-
-            $employee = $this->employeeModel->getById($empId);
-
-            if (!password_verify($currentPass, $employee['password'])) {
-                header("Location: ?c=Portal&a=index&err=pass_incorrecta");
-                exit;
-            }
-
-            if ($newPass !== $confirmPass) {
-                header("Location: ?c=Portal&a=index&err=no_coinciden");
-                exit;
-            }
-
-            $newHash = password_hash($newPass, PASSWORD_DEFAULT);
-            $this->employeeModel->updatePassword($empId, $newHash);
-
-            header("Location: ?c=Portal&a=index&msg=pass_actualizada");
+        if (!isset($_SESSION['portal_role']) || $_SESSION['portal_role'] !== 'empleado') {
+            header("Location: ?c=Auth&a=login");
+            exit;
         }
+
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            header("Location: ?c=Portal&a=index");
+            exit;
+        }
+
+        $claveActual  = $_POST['current_password'] ?? '';
+        $claveNueva   = $_POST['new_password']     ?? '';
+        $claveConfirm = $_POST['confirm_password'] ?? '';
+        $empId        = $_SESSION['portal_id'];
+
+        if (strlen($claveNueva) < 6) {
+            header("Location: ?c=Portal&a=index&err=pass_corta");
+            exit;
+        }
+
+        if ($claveNueva !== $claveConfirm) {
+            header("Location: ?c=Portal&a=index&err=no_coinciden");
+            exit;
+        }
+
+        $miembro = $this->personalModel->getById($empId);
+
+        if (!$miembro || !password_verify($claveActual, $miembro['contrasena'])) {
+            header("Location: ?c=Portal&a=index&err=pass_incorrecta");
+            exit;
+        }
+
+        $this->personalModel->updatePassword($empId, password_hash($claveNueva, PASSWORD_DEFAULT));
+        header("Location: ?c=Portal&a=index&msg=pass_actualizada");
+        exit;
     }
 
-    // 5. CERRAR SESIÓN (CORREGIDO)
+    // 5. CERRAR SESIÓN DEL PORTAL
     public function logout() {
-        // Limpiamos solo las variables del portal
-        unset($_SESSION['portal_id']);
-        unset($_SESSION['portal_name']);
-        unset($_SESSION['portal_code']);
-        unset($_SESSION['portal_role']);
-        
-        // REDIRECCIÓN AL LOGIN PRINCIPAL
+        unset(
+            $_SESSION['portal_id'],
+            $_SESSION['portal_name'],
+            $_SESSION['portal_code'],
+            $_SESSION['portal_role']
+        );
         header("Location: ?c=Auth&a=login");
+        exit;
     }
 }
 ?>

@@ -7,86 +7,83 @@ class Visitor {
     }
 
     // 1. REGISTRAR ENTRADA
-    public function registerEntry($dni, $name, $company, $reason) {
-        // Verificar si existe
-        $queryCheck = "SELECT id FROM visitors WHERE dni = :dni LIMIT 1";
+    public function registerEntry($dni, $nombre, $institucion, $motivo) {
+        // Verificar si el visitante ya existe
+        $queryCheck = "SELECT id FROM visitantes WHERE dni = :dni LIMIT 1";
         $stmtCheck = $this->conn->prepare($queryCheck);
         $stmtCheck->bindParam(':dni', $dni);
         $stmtCheck->execute();
         
-        if ($row = $stmtCheck->fetch(PDO::FETCH_ASSOC)) {
-            $visitorId = $row['id'];
+        if ($fila = $stmtCheck->fetch(PDO::FETCH_ASSOC)) {
+            $visitanteId = $fila['id'];
         } else {
-            // Crear nuevo
-            $queryNew = "INSERT INTO visitors (dni, full_name, company) VALUES (:dni, :name, :company)";
-            $stmtNew = $this->conn->prepare($queryNew);
-            $stmtNew->bindParam(':dni', $dni);
-            $stmtNew->bindParam(':name', $name);
-            $stmtNew->bindParam(':company', $company);
-            $stmtNew->execute();
-            $visitorId = $this->conn->lastInsertId();
+            // Crear nuevo visitante
+            $queryNuevo = "INSERT INTO visitantes (dni, nombre_completo, institucion) VALUES (:dni, :nombre, :institucion)";
+            $stmtNuevo = $this->conn->prepare($queryNuevo);
+            $stmtNuevo->bindParam(':dni',         $dni);
+            $stmtNuevo->bindParam(':nombre',      $nombre);
+            $stmtNuevo->bindParam(':institucion', $institucion);
+            $stmtNuevo->execute();
+            $visitanteId = $this->conn->lastInsertId();
         }
 
-        // Log de visita
-        $queryLog = "INSERT INTO visitor_logs (visitor_id, reason, check_in) VALUES (:vid, :reason, NOW())";
+        // Registrar log de visita
+        $queryLog = "INSERT INTO registros_visitas (visitante_id, motivo, entrada) VALUES (:vid, :motivo, NOW())";
         $stmtLog = $this->conn->prepare($queryLog);
-        $stmtLog->bindParam(':vid', $visitorId);
-        $stmtLog->bindParam(':reason', $reason);
+        $stmtLog->bindParam(':vid',    $visitanteId);
+        $stmtLog->bindParam(':motivo', $motivo);
         
         return $stmtLog->execute();
     }
 
     // 2. REGISTRAR SALIDA
     public function registerExit($dni) {
-        $query = "SELECT l.id, v.full_name 
-                  FROM visitor_logs l
-                  JOIN visitors v ON l.visitor_id = v.id
-                  WHERE v.dni = :dni AND l.check_out IS NULL 
-                  ORDER BY l.id DESC LIMIT 1";
+        $query = "SELECT rv.id, v.nombre_completo 
+                  FROM registros_visitas rv
+                  JOIN visitantes v ON rv.visitante_id = v.id
+                  WHERE v.dni = :dni AND rv.salida IS NULL 
+                  ORDER BY rv.id DESC LIMIT 1";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':dni', $dni);
         $stmt->execute();
 
-        if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $update = "UPDATE visitor_logs SET check_out = NOW() WHERE id = :logId";
+        if ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $update = "UPDATE registros_visitas SET salida = NOW() WHERE id = :logId";
             $stmtUp = $this->conn->prepare($update);
-            $stmtUp->bindParam(':logId', $row['id']);
+            $stmtUp->bindParam(':logId', $fila['id']);
             $stmtUp->execute();
-            return "Salida registrada para: " . $row['full_name'];
+            return "Salida registrada para: " . $fila['nombre_completo'];
         } else {
             return false;
         }
     }
 
-    // 3. HISTORIAL CON FILTROS (Esta es la función que te falta)
-    public function getHistoryWithFilters($start, $end, $search = "") {
-        $query = "SELECT l.id, l.reason, l.check_in, l.check_out, 
-                         v.dni, v.full_name, v.company 
-                  FROM visitor_logs l
-                  INNER JOIN visitors v ON l.visitor_id = v.id
-                  WHERE l.check_in BETWEEN :start AND :end";
+    // 3. HISTORIAL CON FILTROS
+    public function getHistoryWithFilters($inicio, $fin, $busqueda = "") {
+        $query = "SELECT rv.id, rv.motivo, rv.entrada, rv.salida, 
+                         v.dni, v.nombre_completo, v.institucion 
+                  FROM registros_visitas rv
+                  INNER JOIN visitantes v ON rv.visitante_id = v.id
+                  WHERE rv.entrada BETWEEN :inicio AND :fin";
         
-        // Si hay texto de búsqueda, agregamos las condiciones OR
-        if (!empty($search)) {
-            $query .= " AND (v.full_name LIKE :search OR v.dni LIKE :search OR v.company LIKE :search)";
+        if (!empty($busqueda)) {
+            $query .= " AND (v.nombre_completo LIKE :busqueda OR v.dni LIKE :busqueda OR v.institucion LIKE :busqueda)";
         }
         
-        $query .= " ORDER BY l.check_in DESC";
+        $query .= " ORDER BY rv.entrada DESC";
         
         $stmt = $this->conn->prepare($query);
         
-        // Concatenamos horas para cubrir todo el día
-        $startFull = $start . " 00:00:00";
-        $endFull = $end . " 23:59:59";
+        $inicioCompleto = $inicio . " 00:00:00";
+        $finCompleto    = $fin . " 23:59:59";
         
-        $stmt->bindParam(':start', $startFull);
-        $stmt->bindParam(':end', $endFull);
+        $stmt->bindParam(':inicio', $inicioCompleto);
+        $stmt->bindParam(':fin',    $finCompleto);
         
-        // Bind de búsqueda
-        if (!empty($search)) {
-            $searchTerm = "%" . $search . "%";
-            $stmt->bindParam(':search', $searchTerm);
+        if (!empty($busqueda)) {
+            $termino = "%" . $busqueda . "%";
+            $stmt->bindParam(':busqueda', $termino);
         }
         
         $stmt->execute();

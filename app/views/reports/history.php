@@ -18,9 +18,27 @@
 <body class="bg-light">
 
 <div class="d-flex">
+    <style>
+        /* Marca de agua central (usa public/images/logo_watermark.png) */
+        .watermark-container { position: relative; }
+        .watermark-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url('/public/images/logo_watermark.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 50%;
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .watermark-container > * { position: relative; z-index: 1; }
+    </style>
     
     <?php require_once '../app/views/layouts/sidebar.php'; ?>
 
+    <div class="watermark-container">
     <div class="flex-grow-1 p-4" style="height: 100vh; overflow-y: auto;">
         <h2 class="mb-4 fw-bold text-secondary"><i class="bi bi-search"></i> Historial de Asistencia</h2>
 
@@ -31,12 +49,12 @@
                     <input type="hidden" name="a" value="history">
 
                     <div class="col-md-4">
-                        <label class="form-label fw-bold">Filtrar por Empleado</label>
+                        <label class="form-label fw-bold">Filtrar por Personal</label>
                         <select name="employee_id" class="form-select">
-                            <option value="">-- Todos los Empleados --</option>
+                            <option value="">-- Todo el Personal --</option>
                             <?php foreach($employees as $emp): ?>
                                 <option value="<?php echo $emp['id']; ?>" <?php echo ($employee_id == $emp['id']) ? 'selected' : ''; ?>>
-                                    <?php echo $emp['first_name'] . ' ' . $emp['last_name']; ?>
+                                    <?php echo $emp['nombres'] . ' ' . $emp['apellidos']; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
@@ -72,8 +90,8 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-dark">
                             <tr>
-                                <th class="ps-4">Empleado</th>
-                                <th>Departamento</th>
+                                <th class="ps-4">Personal</th>
+                                <th>Área</th>
                                 <th>Fecha</th>
                                 <th>Entrada</th>
                                 <th>Salida</th>
@@ -86,36 +104,35 @@
                                 
                                 <?php 
                                     $esTarde = false;
-                                    // Usamos la hora oficial pasada desde el controlador
-                                    if(strtotime($log['check_in_time']) > strtotime($horaEntradaOficial)) {
+                                    if(strtotime($log['hora_entrada']) > strtotime($horaEntradaOficial)) {
                                         $esTarde = true;
                                     }
                                 ?>
 
                                 <tr>
                                     <td class="ps-4">
-                                        <div class="fw-bold"><?php echo $log['first_name'] . ' ' . $log['last_name']; ?></div>
-                                        <small class="text-muted"><?php echo $log['employee_code']; ?></small>
+                                        <div class="fw-bold"><?php echo $log['nombres'] . ' ' . $log['apellidos']; ?></div>
+                                        <small class="text-muted"><?php echo $log['codigo']; ?></small>
                                     </td>
-                                    <td><?php echo $log['department']; ?></td>
-                                    <td><?php echo date('d/m/Y', strtotime($log['date_log'])); ?></td>
+                                    <td><?php echo $log['area']; ?></td>
+                                    <td><?php echo date('d/m/Y', strtotime($log['fecha'])); ?></td>
                                     
                                     <td>
                                         <?php if($esTarde): ?>
                                             <div class="text-danger fw-bold">
-                                                <?php echo date('H:i:s', strtotime($log['check_in_time'])); ?>
+                                                <?php echo date('H:i:s', strtotime($log['hora_entrada'])); ?>
                                                 <i class="bi bi-exclamation-circle-fill" title="Tarde"></i>
                                             </div>
                                         <?php else: ?>
                                             <div class="text-success fw-bold">
-                                                <?php echo date('H:i:s', strtotime($log['check_in_time'])); ?>
+                                                <?php echo date('H:i:s', strtotime($log['hora_entrada'])); ?>
                                             </div>
                                         <?php endif; ?>
                                     </td>
                                     
                                     <td class="text-secondary fw-bold">
-                                        <?php if($log['check_out_time']): ?>
-                                            <?php echo date('H:i:s', strtotime($log['check_out_time'])); ?>
+                                        <?php if($log['hora_salida']): ?>
+                                            <?php echo date('H:i:s', strtotime($log['hora_salida'])); ?>
                                         <?php else: ?>
                                             <span class="badge bg-warning text-dark">En Turno</span>
                                         <?php endif; ?>
@@ -123,9 +140,9 @@
 
                                     <td>
                                         <?php 
-                                            if($log['check_out_time']) {
-                                                $in = new DateTime($log['check_in_time']);
-                                                $out = new DateTime($log['check_out_time']);
+                                            if($log['hora_salida']) {
+                                                $in   = new DateTime($log['hora_entrada']);
+                                                $out  = new DateTime($log['hora_salida']);
                                                 $diff = $in->diff($out);
                                                 echo '<span class="badge bg-info text-dark fs-6">' . $diff->format('%H h %I m') . '</span>';
                                             } else {
@@ -144,6 +161,7 @@
             </div>
         </div>
 
+    </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

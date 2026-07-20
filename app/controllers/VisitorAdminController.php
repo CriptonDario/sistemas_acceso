@@ -3,7 +3,7 @@ require_once '../app/config/db.php';
 require_once '../app/models/Visitor.php';
 
 class VisitorAdminController {
-    private $visitorModel;
+    private $visitanteModel;
     private $db;
 
     public function __construct() {
@@ -15,19 +15,16 @@ class VisitorAdminController {
 
         $database = new Database();
         $this->db = $database->getConnection();
-        $this->visitorModel = new Visitor($this->db);
+        $this->visitanteModel = new Visitor($this->db);
     }
 
     public function index() {
-        // 1. Capturar Filtros (o poner valores por defecto)
-        $start = isset($_GET['start']) ? $_GET['start'] : date('Y-m-01'); // Primer día del mes
-        $end = isset($_GET['end']) ? $_GET['end'] : date('Y-m-d');       // Hoy
-        $search = isset($_GET['search']) ? $_GET['search'] : '';
+        $start   = isset($_GET['start'])  ? $_GET['start']  : date('Y-m-01');
+        $end     = isset($_GET['end'])    ? $_GET['end']    : date('Y-m-d');
+        $search  = isset($_GET['search']) ? $_GET['search'] : '';
 
-        // 2. Obtener datos filtrados
-        $visitors = $this->visitorModel->getHistoryWithFilters($start, $end, $search);
+        $visitors = $this->visitanteModel->getHistoryWithFilters($start, $end, $search);
         
-        // 3. Cargar la vista
         require_once '../app/views/visitors/index.php';
     }
 }

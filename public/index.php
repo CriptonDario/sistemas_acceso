@@ -1,49 +1,51 @@
 <?php
 // ==========================================
-// 1. CONFIGURACIÓN GLOBAL
+// CONFIGURACIÓN GLOBAL
 // ==========================================
-
-// Ajuste de Zona Horaria (Perú -05:00)
-// Esto arregla que la hora de entrada salga 5 horas adelantada.
 date_default_timezone_set('America/Lima');
 
-// Habilitar visualización de errores (Solo para desarrollo)
+// En producción cambiar a 0
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // ==========================================
-// 2. SISTEMA DE ENRUTAMIENTO
+// FRONT CONTROLLER — ENRUTAMIENTO
 // ==========================================
-
-// Cargar conexión a BD
 require_once '../app/config/db.php';
 
-// Definir controlador y acción por defecto
-$controller = isset($_GET['c']) ? $_GET['c'] : 'Dashboard';
-$action = isset($_GET['a']) ? $_GET['a'] : 'index';
+// Sanitizar parámetros de ruta — solo letras
+$controller = isset($_GET['c']) ? preg_replace('/[^a-zA-Z]/', '', $_GET['c']) : 'Dashboard';
+$action     = isset($_GET['a']) ? preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['a']) : 'index';
 
-// Construir nombres de archivo y clase
+// Valores por defecto seguros
+if (empty($controller)) $controller = 'Dashboard';
+if (empty($action))     $action     = 'index';
+
 $controllerName = ucfirst($controller) . 'Controller';
 $controllerFile = '../app/controllers/' . $controllerName . '.php';
 
-// Verificar existencia y cargar
 if (file_exists($controllerFile)) {
     require_once $controllerFile;
-    
+
     if (class_exists($controllerName)) {
-        $controllerObject = new $controllerName();
-        
-        if (method_exists($controllerObject, $action)) {
-            $controllerObject->$action();
+        $obj = new $controllerName();
+
+        if (method_exists($obj, $action)) {
+            $obj->$action();
         } else {
-            echo "Error: La acción '$action' no existe en el controlador '$controllerName'.";
+            http_response_code(404);
+            echo "<div style='font-family:sans-serif;padding:40px'>";
+            echo "<h2>404 — Acción no encontrada</h2>";
+            echo "<p>La acción <b>" . htmlspecialchars($action) . "</b> no existe.</p>";
+            echo "<a href='?c=Dashboard'>Volver al inicio</a>";
+            echo "</div>";
         }
     } else {
-        echo "Error: La clase '$controllerName' no se encontró.";
+        http_response_code(500);
+        echo "<div style='font-family:sans-serif;padding:40px'><h2>Error interno</h2></div>";
     }
 } else {
-    // Si la página no existe, mandar al Login
     header("Location: ?c=Auth&a=login");
     exit;
 }

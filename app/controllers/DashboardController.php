@@ -2,74 +2,77 @@
 require_once '../app/config/db.php';
 require_once '../app/models/Attendance.php';
 require_once '../app/models/Employee.php';
-require_once '../app/models/Setting.php'; // <--- IMPORTANTE: Nuevo Modelo
+require_once '../app/models/Setting.php';
 
 class DashboardController {
     private $db;
-    private $attendanceModel;
-    private $employeeModel;
-    private $settingModel; // Variable para la configuración
+    private $asistenciaModel;
+    private $personalModel;
+    private $configuracionModel;
 
     public function __construct() {
         if (session_status() == PHP_SESSION_NONE) session_start();
         
-        // 1. Verificar Login
         if (!isset($_SESSION['user_id'])) {
             header("Location: ?c=Auth&a=login");
             exit;
         }
 
-        // 2. Conexión y Modelos
         $database = new Database();
         $this->db = $database->getConnection();
         
-        $this->attendanceModel = new Attendance($this->db);
-        $this->employeeModel = new Employee($this->db);
-        $this->settingModel = new Setting($this->db); // <--- Inicializamos
+        $this->asistenciaModel    = new Attendance($this->db);
+        $this->personalModel      = new Employee($this->db);
+        $this->configuracionModel = new Setting($this->db);
     }
 
     public function index() {
-        // A. OBTENER LA HORA DE ENTRADA DE LA BD
-        // Si no existe en BD, usamos '08:00:00' por defecto para que no falle
-        $horaEntrada = $this->settingModel->get('entry_time');
-        if (!$horaEntrada) $horaEntrada = '08:00:00';
+        // A. Hora de entrada oficial desde la BD
+        $horaEntrada = $this->configuracionModel->get('hora_entrada');
+        if (!$horaEntrada) $horaEntrada = '07:30:00';
 
-        // B. Estadísticas Generales
-        $totalEmployees = $this->countEmployees(); 
-        $attendanceToday = $this->attendanceModel->countToday();
+        // B. Estadísticas generales
+        $totalEmpleados   = $this->contarPersonal();
+        $asistenciaHoy    = $this->asistenciaModel->countToday();
         
-        // C. Contar Tardanzas (Usando la hora dinámica)
-        $totalLates = $this->attendanceModel->countLatesToday($horaEntrada);
+        // C. Tardanzas del día
+        $totalTardanzas = $this->asistenciaModel->countLatesToday($horaEntrada);
         
-        // D. Obtener lista reciente
-        $recentLogs = $this->attendanceModel->getRecentLogs();
+        // D. Registros recientes
+        $registrosRecientes = $this->asistenciaModel->getRecentLogs();
 
-        // E. Datos para el Gráfico
-        $chartData = $this->attendanceModel->getWeeklyStats();
-        $labels = [];
-        $dataValues = [];
+        // E. Datos para el gráfico semanal
+        $datosSemana = $this->asistenciaModel->getWeeklyStats();
+        $etiquetas   = [];
+        $valores     = [];
         
-        foreach($chartData as $day) {
-            $labels[] = date('d/m', strtotime($day['date_log']));
-            $dataValues[] = $day['total'];
+        foreach ($datosSemana as $dia) {
+            $etiquetas[] = date('d/m', strtotime($dia['fecha']));
+            $valores[]   = $dia['total'];
         }
-        // Evitar error de JS si no hay datos
-        if (empty($labels)) { 
-            $labels[] = date('d/m'); 
-            $dataValues[] = 0; 
+        if (empty($etiquetas)) { 
+            $etiquetas[] = date('d/m'); 
+            $valores[]   = 0; 
         }
 
-        // F. Cargar vista
+        // Variables de vista (compatibles con dashboard/index.php)
+        $totalEmployees   = $totalEmpleados;
+        $attendanceToday  = $asistenciaHoy;
+        $totalLates       = $totalTardanzas;
+        $recentLogs       = $registrosRecientes;
+        $labels           = $etiquetas;
+        $dataValues       = $valores;
+        $horaEntrada      = $horaEntrada; // para el badge "después de HH:MM"
+
         require_once '../app/views/dashboard/index.php';
     }
 
-    // Método auxiliar privado
-    private function countEmployees() {
-        $query = "SELECT COUNT(*) as total FROM employees WHERE status = 'activo'";
-        $stmt = $this->db->prepare($query);
+    private function contarPersonal() {
+        $query = "SELECT COUNT(*) as total FROM personal WHERE estado = 'activo'";
+        $stmt  = $this->db->prepare($query);
         $stmt->execute();
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $row['total'];
+        $fila  = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $fila['total'];
     }
 }
 ?>

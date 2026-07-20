@@ -64,15 +64,23 @@
                     <i class="bi bi-person-workspace me-1"></i> Empleado
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="student-tab" data-bs-toggle="pill" data-bs-target="#student-pane" type="button">
+                    <i class="bi bi-mortarboard-fill me-1"></i> Alumno
+                </button>
+            </li>
         </ul>
 
         <?php 
             // Capturar errores de la URL si vienen de redirección
             $err = isset($_GET['error']) ? $_GET['error'] : (isset($error) ? $error : '');
+            // Si vienen de c=StudentPortal o Portal, activar la pestaña correcta
+            $activeTab = 'admin';
+            if (isset($_GET['tab'])) $activeTab = $_GET['tab'];
         ?>
         <?php if(!empty($err)): ?>
             <div class="alert alert-danger text-center p-2 mb-3 small rounded-3">
-                <i class="bi bi-exclamation-circle-fill me-1"></i> <?php echo $err; ?>
+                <i class="bi bi-exclamation-circle-fill me-1"></i> <?php echo htmlspecialchars($err); ?>
             </div>
         <?php endif; ?>
 
@@ -117,12 +125,31 @@
                 </form>
             </div>
 
+            <div class="tab-pane fade" id="student-pane" role="tabpanel">
+                <form action="?c=PortalAlumno&a=authenticate" method="POST">
+                    <div class="form-floating mb-3">
+                        <input type="email" name="email_alumno" class="form-control" id="stuEmail" placeholder="Correo" required>
+                        <label for="stuEmail">Correo del Alumno</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" name="password_alumno" class="form-control" id="stuPass" placeholder="Contraseña" required>
+                        <label for="stuPass">Contraseña</label>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success btn-lg fw-bold">
+                            <i class="bi bi-mortarboard-fill me-1"></i> Ver Mis Notas
+                        </button>
+                    </div>
+                    <div class="text-center mt-3">
+                        <small class="text-muted">Contraseña por defecto: <strong>123456</strong></small>
+                    </div>
+                </form>
+            </div>
+
         </div>
     </div>
     <div class="card-footer bg-light text-center py-3 border-0">
-        <small class="text-muted">Sistema de Control de Acceso
-            ing. Draio@ 2026
-        </small>
+    <small class="text-muted">Colegio Pestalozzi — Sistema de Control de Acceso &copy; <?php echo date('Y'); ?></small>
     </div>
 </div>
 

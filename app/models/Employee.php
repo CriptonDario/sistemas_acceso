@@ -1,29 +1,32 @@
 <?php
 class Employee {
     private $conn;
-    private $table = "employees";
+    private $tabla = "personal";
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
-    // 1. LEER TODOS (Para Admin)
-    public function read($search = "") {
-        $query = "SELECT e.*, d.name as department_name 
-                  FROM " . $this->table . " e
-                  LEFT JOIN departments d ON e.department_id = d.id";
+    // 1. LEER TODO EL PERSONAL
+    public function read($busqueda = "") {
+        $query = "SELECT p.*, ar.nombre as nombre_area 
+                  FROM " . $this->tabla . " p
+                  LEFT JOIN areas ar ON p.area_id = ar.id";
         
-        if (!empty($search)) {
-            $query .= " WHERE e.first_name LIKE :search 
-                        OR e.last_name LIKE :search 
-                        OR e.employee_code LIKE :search 
-                        OR e.position LIKE :search";
+        if (!empty($busqueda)) {
+            $query .= " WHERE p.nombres  LIKE :b1
+                           OR p.apellidos LIKE :b2
+                           OR p.codigo    LIKE :b3
+                           OR p.cargo     LIKE :b4";
         }
-        $query .= " ORDER BY e.id DESC";
+        $query .= " ORDER BY p.id DESC";
         $stmt = $this->conn->prepare($query);
-        if (!empty($search)) {
-            $searchTerm = "%" . $search . "%";
-            $stmt->bindParam(':search', $searchTerm);
+        if (!empty($busqueda)) {
+            $t = "%" . $busqueda . "%";
+            $stmt->bindValue(':b1', $t);
+            $stmt->bindValue(':b2', $t);
+            $stmt->bindValue(':b3', $t);
+            $stmt->bindValue(':b4', $t);
         }
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -31,7 +34,7 @@ class Employee {
 
     // 2. OBTENER UNO
     public function getById($id) {
-        $query = "SELECT * FROM " . $this->table . " WHERE id = :id LIMIT 1";
+        $query = "SELECT * FROM " . $this->tabla . " WHERE id = :id LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
         $stmt->execute();
@@ -39,78 +42,94 @@ class Employee {
     }
 
     // 3. CREAR (Con contraseña por defecto '123456')
-    public function create($data) {
-        $defaultPass = password_hash("123456", PASSWORD_DEFAULT);
-        $query = "INSERT INTO " . $this->table . " 
-                 (employee_code, first_name, last_name, email, password, department_id, position, status) 
-                 VALUES (:code, :fname, :lname, :email, :pass, :dept, :pos, 'activo')";
+    public function create($datos) {
+        $claveDefecto = password_hash("123456", PASSWORD_DEFAULT);
+        $foto = $datos['foto'] ?? 'default.png';
+        $query = "INSERT INTO " . $this->tabla . " 
+                 (codigo, nombres, apellidos, correo, contrasena, area_id, cargo, tipo_personal, foto, estado) 
+                 VALUES (:codigo, :nombres, :apellidos, :correo, :contrasena, :area, :cargo, :tipo, :foto, 'activo')";
         
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':code', $data['employee_code']);
-        $stmt->bindParam(':fname', $data['first_name']);
-        $stmt->bindParam(':lname', $data['last_name']);
-        $stmt->bindParam(':email', $data['email']);
-        $stmt->bindParam(':pass', $defaultPass);
-        $stmt->bindParam(':dept', $data['department_id']);
-        $stmt->bindParam(':pos', $data['position']);
+        $stmt->bindParam(':codigo',     $datos['codigo']);
+        $stmt->bindParam(':nombres',    $datos['nombres']);
+        $stmt->bindParam(':apellidos',  $datos['apellidos']);
+        $stmt->bindParam(':correo',     $datos['correo']);
+        $stmt->bindParam(':contrasena', $claveDefecto);
+        $stmt->bindParam(':area',       $datos['area_id']);
+        $stmt->bindParam(':cargo',      $datos['cargo']);
+        $tipo = isset($datos['tipo_personal']) ? $datos['tipo_personal'] : 'administrativo';
+        $stmt->bindParam(':tipo',       $tipo);
+        $stmt->bindParam(':foto',       $foto);
         return $stmt->execute();
     }
 
     // 4. ACTUALIZAR DATOS
-    public function update($data) {
-        $query = "UPDATE " . $this->table . " 
-                  SET first_name = :fname, last_name = :lname, 
-                      email = :email, department_id = :dept, position = :pos, employee_code = :code
-                  WHERE id = :id";
+    public function update($datos) {
+        // Si viene foto nueva, actualizarla también
+        if (!empty($datos['foto'])) {
+            $query = "UPDATE " . $this->tabla . " 
+                      SET nombres = :nombres, apellidos = :apellidos, 
+                          correo = :correo, area_id = :area, cargo = :cargo, 
+                          codigo = :codigo, tipo_personal = :tipo, foto = :foto
+                      WHERE id = :id";
+        } else {
+            $query = "UPDATE " . $this->tabla . " 
+                      SET nombres = :nombres, apellidos = :apellidos, 
+                          correo = :correo, area_id = :area, cargo = :cargo, 
+                          codigo = :codigo, tipo_personal = :tipo
+                      WHERE id = :id";
+        }
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':fname', $data['first_name']);
-        $stmt->bindParam(':lname', $data['last_name']);
-        $stmt->bindParam(':email', $data['email']);
-        $stmt->bindParam(':dept', $data['department_id']);
-        $stmt->bindParam(':pos', $data['position']);
-        $stmt->bindParam(':code', $data['employee_code']);
-        $stmt->bindParam(':id', $data['id']);
+        $stmt->bindParam(':nombres',   $datos['nombres']);
+        $stmt->bindParam(':apellidos', $datos['apellidos']);
+        $stmt->bindParam(':correo',    $datos['correo']);
+        $stmt->bindParam(':area',      $datos['area_id']);
+        $stmt->bindParam(':cargo',     $datos['cargo']);
+        $stmt->bindParam(':codigo',    $datos['codigo']);
+        $tipo = isset($datos['tipo_personal']) ? $datos['tipo_personal'] : 'administrativo';
+        $stmt->bindParam(':tipo',      $tipo);
+        if (!empty($datos['foto'])) $stmt->bindParam(':foto', $datos['foto']);
+        $stmt->bindParam(':id',        $datos['id']);
         return $stmt->execute();
     }
 
     // 5. CAMBIAR ESTADO
-    public function toggleStatus($id, $newStatus) {
-        $query = "UPDATE " . $this->table . " SET status = :status WHERE id = :id";
+    public function toggleStatus($id, $nuevoEstado) {
+        $query = "UPDATE " . $this->tabla . " SET estado = :estado WHERE id = :id";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':status', $newStatus);
+        $stmt->bindParam(':estado', $nuevoEstado);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
 
     // 6. ELIMINAR
     public function delete($id) {
-        $query = "DELETE FROM " . $this->table . " WHERE id = :id";
+        $query = "DELETE FROM " . $this->tabla . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
 
-    // 7. LOGIN EMPLEADO
-    public function login($email, $password) {
-        $query = "SELECT * FROM " . $this->table . " WHERE email = :email AND status = 'activo' LIMIT 1";
+    // 7. LOGIN PERSONAL (Portal del Empleado)
+    public function login($correo, $contrasena) {
+        $query = "SELECT * FROM " . $this->tabla . " WHERE correo = :correo AND estado = 'activo' LIMIT 1";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':correo', $correo);
         $stmt->execute();
         
-        if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            // Verificar si tiene password y si coincide
-            if (!empty($row['password']) && password_verify($password, $row['password'])) {
-                return $row;
+        if ($fila = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            if (!empty($fila['contrasena']) && password_verify($contrasena, $fila['contrasena'])) {
+                return $fila;
             }
         }
         return false;
     }
 
     // 8. ACTUALIZAR SOLO CONTRASEÑA
-    public function updatePassword($id, $newHash) {
-        $query = "UPDATE " . $this->table . " SET password = :pass WHERE id = :id";
+    public function updatePassword($id, $nuevoHash) {
+        $query = "UPDATE " . $this->tabla . " SET contrasena = :contrasena WHERE id = :id";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':pass', $newHash);
+        $stmt->bindParam(':contrasena', $nuevoHash);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }

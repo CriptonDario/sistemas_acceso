@@ -18,13 +18,37 @@
 <body class="bg-light">
 
 <div class="d-flex">
+    <style>
+        /* Marca de agua central (usa public/images/logo_watermark.png) */
+        .watermark-container { position: relative; }
+        .watermark-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: url('/public/images/logo_watermark.png');
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 50%;
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .watermark-container > * { position: relative; z-index: 1; }
+    </style>
     
     <?php require_once '../app/views/layouts/sidebar.php'; ?>
 
+    <div class="watermark-container">
     <div class="flex-grow-1 p-4" style="height: 100vh; overflow-y: auto;">
-        <h2 class="mb-4 fw-bold text-secondary">📊 Generar Reportes</h2>
+        <h2 class="mb-4 fw-bold text-secondary">📊 Generar Reportes — Colegio Pestalozzi</h2>
 
         <div class="row">
+            <div class="col-12 mb-3">
+                <div class="d-flex gap-2">
+                    <a href="?c=Report&a=history" class="btn btn-outline-primary"><i class="bi bi-clock-history"></i> Ver Historial Empleados</a>
+                    <a href="?c=Report&a=studentHistory" class="btn btn-outline-secondary"><i class="bi bi-person-badge"></i> Ver Historial Alumnos</a>
+                </div>
+            </div>
             <div class="col-md-7">
                 <div class="card shadow border-0">
                     <div class="card-header bg-success text-white py-3">
@@ -65,6 +89,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

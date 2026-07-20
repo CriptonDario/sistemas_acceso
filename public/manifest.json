@@ -1,7 +1,7 @@
 {
-  "name": "Control de Acceso",
-  "short_name": "AccesoApp",
-  "start_url": "index.php?c=Attendance",
+  "name": "Colegio Pestalozzi - Control de Acceso",
+  "short_name": "Pestalozzi",
+  "start_url": "./index.php?c=Attendance",
   "display": "standalone",
   "background_color": "#212529",
   "theme_color": "#0d6efd",
